@@ -2,6 +2,11 @@
 const express = require('express')
 // Passport docs: http://www.passportjs.org/docs/
 const passport = require('passport')
+// include multer package
+const multer = require('multer')
+// setup memory storage
+const storage = multer.memoryStorage()
+const upload = multer({ storage })
 
 // pull in Mongoose model for uploads
 const Upload = require('../models/upload')
@@ -60,15 +65,16 @@ router.get('/uploads/:id', requireToken, (req, res, next) => {
 
 // CREATE
 // POST /uploads
-router.post('/uploads', (req, res, next) => {
+router.post('/uploads', upload.single('file'), (req, res, next) => {
   // set owner of new upload to be current user
   // req.body.upload.owner = req.user.id
+  console.log(req.body, req.file)
 
-  s3Upload('text-test.txt', 'Hello World!')
+  s3Upload(req.file.originalname, req.file.buffer, req.file.mimetype)
     .then(data => {
       return Upload.create({
         fileName: data.key,
-        fileType: 'NA',
+        fileType: req.file.mimetype,
         fileUrl: data.Location
       })
     })
